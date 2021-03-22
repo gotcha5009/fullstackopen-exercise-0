@@ -1,1 +1,1 @@
-fullstackopen-exercise-0
+fullstackopen-exercises
