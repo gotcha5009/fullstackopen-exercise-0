@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import PersonForm from './Components/PersonForm';
 import Persons from './Components/Persons';
 import Filter from './Components/Filter';
+import Notification from './Components/Notification';
 import personService from './services/persons';
+import './index.css';
 // import axios from 'axios';
 
 const App = () => {
@@ -10,6 +12,7 @@ const App = () => {
   const [filterPersons, setFilterPersons] = useState(persons);
   const [newName, setNewName] = useState('');
   const [newNum, setNewNum] = useState('');
+  const [errorMessage, setErrorMessage] = useState(null);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -40,6 +43,22 @@ const App = () => {
             setFilterPersons(
               filterPersons.map((person) => (person.id !== id ? person : res))
             );
+            setErrorMessage(`Updated ${res.name}`);
+            setTimeout(() => {
+              setErrorMessage(null);
+            }, 5000);
+          })
+          .catch((err) => {
+            setErrorMessage(
+              `Information of ${newName} has already been removed from server`
+            );
+            setTimeout(() => {
+              setErrorMessage(null);
+            }, 5000);
+            setPersons(persons.filter((person) => person.id !== id));
+            setFilterPersons(
+              filterPersons.filter((person) => person.id !== id)
+            );
           });
       }
     } else {
@@ -53,6 +72,10 @@ const App = () => {
         setFilterPersons(persons.concat(res));
         setNewName('');
         setNewNum('');
+        setErrorMessage(`Added ${res.name}`);
+        setTimeout(() => {
+          setErrorMessage(null);
+        }, 5000);
       });
     }
   };
@@ -87,6 +110,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={errorMessage} />
       <Filter handleFilter={handleFilter} />
       <h2>add a new</h2>
       <PersonForm
