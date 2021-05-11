@@ -1,34 +1,59 @@
-import React, { useState, useEffect } from "react";
-import PersonForm from "./Components/PersonForm";
-import Persons from "./Components/Persons";
-import Filter from "./Components/Filter";
-import axios from "axios";
+import React, { useState, useEffect } from 'react';
+import PersonForm from './Components/PersonForm';
+import Persons from './Components/Persons';
+import Filter from './Components/Filter';
+import personService from './services/persons';
+// import axios from 'axios';
 
 const App = () => {
   const [persons, setPersons] = useState([]);
   const [filterPersons, setFilterPersons] = useState(persons);
-  const [newName, setNewName] = useState("");
-  const [newNum, setNewNum] = useState("");
+  const [newName, setNewName] = useState('');
+  const [newNum, setNewNum] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
     let exist = false;
+    let id;
     for (const person of persons) {
       if (person.name === newName) {
         exist = true;
+        id = person.id;
       }
     }
     if (exist) {
-      alert(`${newName} is already added to phonebook`);
+      if (
+        window.confirm(
+          `${newName} is already added to phonebook, replace the old number with a new one?`
+        )
+      ) {
+        personService
+          .update(id, {
+            name: newName,
+            number: newNum,
+          })
+          .then((res) => {
+            console.log('res :>> ', res);
+            setPersons(
+              persons.map((person) => (person.id !== id ? person : res))
+            );
+            setFilterPersons(
+              filterPersons.map((person) => (person.id !== id ? person : res))
+            );
+          });
+      }
     } else {
       const personObject = {
         name: newName,
         number: newNum,
       };
-      setPersons(persons.concat(personObject));
-      setFilterPersons(persons.concat(personObject));
-      setNewName("");
-      setNewNum("");
+      personService.create(personObject).then((res) => {
+        console.log(res);
+        setPersons(persons.concat(res));
+        setFilterPersons(persons.concat(res));
+        setNewName('');
+        setNewNum('');
+      });
     }
   };
 
@@ -41,10 +66,10 @@ const App = () => {
   };
 
   const handleFilter = (e) => {
-    if (e.target.value === "") {
+    if (e.target.value === '') {
       setFilterPersons(persons);
     } else {
-      const regex = new RegExp(`^${e.target.value}`, "i");
+      const regex = new RegExp(`^${e.target.value}`, 'i');
       const newFilterPersons = filterPersons.filter((person) =>
         regex.test(person.name)
       );
@@ -53,10 +78,9 @@ const App = () => {
   };
 
   useEffect(() => {
-    axios.get("http://localhost:3001/persons").then((response) => {
-      console.log("promise fulfilled");
-      setPersons(response.data);
-      setFilterPersons(response.data);
+    personService.getAll().then((res) => {
+      setPersons(res);
+      setFilterPersons(res);
     });
   }, []);
 
@@ -73,7 +97,12 @@ const App = () => {
         handleNum={handleNum}
       />
       <h2>Numbers</h2>
-      <Persons persons={filterPersons} />
+      <Persons
+        filterPersons={filterPersons}
+        persons={persons}
+        setPersons={setPersons}
+        setFilterPersons={setFilterPersons}
+      />
     </div>
   );
 };
