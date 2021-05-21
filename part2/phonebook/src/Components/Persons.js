@@ -6,11 +6,9 @@ const Persons = ({ filterPersons, persons, setPersons, setFilterPersons }) => {
     if (window.confirm(`Delete ${e.target.name}?`)) {
       personService.remove(e.target.id).then((res) => {
         console.log(res);
-        setPersons(
-          persons.filter((person) => person.id !== Number(e.target.id))
-        );
+        setPersons(persons.filter((person) => person.id !== e.target.id));
         setFilterPersons(
-          filterPersons.filter((person) => person.id !== Number(e.target.id))
+          filterPersons.filter((person) => person.id !== e.target.id)
         );
       });
     }

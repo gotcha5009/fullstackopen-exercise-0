@@ -58,6 +58,10 @@ blogRouter
     res.status(204).end();
   })
   .put(async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ error: 'token missing or invalid' });
+    }
+
     const result = await Blog.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
     });

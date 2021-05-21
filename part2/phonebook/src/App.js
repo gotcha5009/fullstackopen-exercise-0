@@ -49,16 +49,10 @@ const App = () => {
             }, 5000);
           })
           .catch((err) => {
-            setErrorMessage(
-              `Information of ${newName} has already been removed from server`
-            );
+            setErrorMessage(`Error: ${err.response.data.error}`);
             setTimeout(() => {
               setErrorMessage(null);
             }, 5000);
-            setPersons(persons.filter((person) => person.id !== id));
-            setFilterPersons(
-              filterPersons.filter((person) => person.id !== id)
-            );
           });
       }
     } else {
@@ -66,17 +60,23 @@ const App = () => {
         name: newName,
         number: newNum,
       };
-      personService.create(personObject).then((res) => {
-        console.log(res);
-        setPersons(persons.concat(res));
-        setFilterPersons(persons.concat(res));
-        setNewName('');
-        setNewNum('');
-        setErrorMessage(`Added ${res.name}`);
-        setTimeout(() => {
-          setErrorMessage(null);
-        }, 5000);
-      });
+      personService
+        .create(personObject)
+        .then((res) => {
+          console.log(res);
+          setPersons(persons.concat(res));
+          setFilterPersons(persons.concat(res));
+          setNewName('');
+          setNewNum('');
+          setErrorMessage(`Added ${res.name}`);
+          setTimeout(() => {
+            setErrorMessage(null);
+          }, 5000);
+        })
+        .catch((err) => {
+          console.log(err.response.data);
+          setErrorMessage(`Error: ${err.response.data.error}`);
+        });
     }
   };
 
