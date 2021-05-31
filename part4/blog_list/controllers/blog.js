@@ -33,7 +33,11 @@ blogRouter
     await User.findByIdAndUpdate(req.user.id, {
       $addToSet: { blogs: result.id },
     });
-    res.status(201).json(result);
+    const popResult = await Blog.populate(result, {
+      path: 'user',
+      select: 'username name id',
+    });
+    res.status(201).json(popResult);
   });
 
 blogRouter
@@ -67,5 +71,21 @@ blogRouter
     });
     res.json(result.toJSON());
   });
+
+blogRouter.route('/:id/comments').post(async (req, res) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'token missing or invalid' });
+  }
+
+  const result = await Blog.findByIdAndUpdate(
+    req.params.id,
+    {
+      $push: { comments: req.body.comment },
+    },
+    { new: true }
+  );
+
+  res.json(result.toJSON());
+});
 
 module.exports = blogRouter;
