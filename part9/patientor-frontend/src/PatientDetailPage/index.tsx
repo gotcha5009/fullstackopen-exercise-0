@@ -5,7 +5,7 @@ import { Header, Icon, Card } from 'semantic-ui-react';
 
 import { Patient, Entry } from '../types';
 import { apiBaseUrl } from '../constants';
-import { useStateValue, addPatient } from '../state';
+import { useStateValue, updatePatient } from '../state';
 import HealthCheckEntry from '../components/HealthCheckEntry';
 import HospitalEntry from '../components/HospitalEntry';
 import OccupationalEntry from '../components/OccupationalEntry';
@@ -14,19 +14,19 @@ const PatientDetailPage = () => {
   const [{ patients }, dispatch] = useStateValue();
   const { id } = useParams<{ id: string }>();
 
-  let patient: Patient | undefined = patients[id];
+  const patient: Patient | undefined = patients[id];
 
   React.useEffect(() => {
-    if (!patient) {
+    if (patient && !patient.ssn) {
+      // console.log('patient found but got no details');
       axios
         .get<Patient>(`${apiBaseUrl}/patients/${id}`)
         .then((res) => {
-          patient = res.data;
-          dispatch(addPatient(res.data));
+          dispatch(updatePatient(res.data));
         })
         .catch((e) => console.error(e));
     }
-  }, []);
+  });
 
   const assertNever = (value: never): never => {
     throw new Error(
@@ -66,24 +66,12 @@ const PatientDetailPage = () => {
         />
       </Header>
       <p>
-        {patient.ssn && `ssn: ${patient.ssn}`} <br />
+        ssn: {patient.ssn} <br />
         occupation: {patient.occupation} <br />
       </p>
       <Header as="h2">entries</Header>
       <Card.Group>
-        {patient.entries.map((e) => (
-          // <div key={e.id}>
-          //   <p>
-          //     {e.date} <i>{e.description}</i>
-          //   </p>
-          //   <ul>
-          //     {e.diagnosisCodes?.map((d) => (
-          //       <li key={d}>
-          //         {d} {diagnoses[d]?.name}
-          //       </li>
-          //     ))}
-          //   </ul>
-          // </div>
+        {patient.entries?.map((e) => (
           <EntryDetails key={e.id} entry={e} />
         ))}
       </Card.Group>

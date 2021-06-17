@@ -1,13 +1,13 @@
 import express from 'express';
 import patientService from '../services/patientService';
-import toNewPatientEntry from '../utils';
+import { toNewPatientEntry, toNewEntry } from '../utils';
 
 const router = express.Router();
 
 router
   .get('/', (_req, res) => {
     //   res.send('Fetching all diaries!');
-    res.json(patientService.getNonSensitiveEntries());
+    res.json(patientService.getPublicPatients());
   })
   .post('/', (req, res) => {
     try {
@@ -31,11 +31,19 @@ router.get('/:id', (req, res) => {
 });
 
 router.post('/:id/entries', (req, res) => {
-  const newEntry = patientService.addEntry(req.params.id, req.body);
-  if (newEntry) {
-    res.send(newEntry);
-  } else {
-    res.sendStatus(404);
+  try {
+    const newEntry = toNewEntry(req.body);
+    const patient = patientService.findById(req.params.id);
+
+    if (patient) {
+      const newPatient = patientService.addEntry(patient, newEntry);
+      res.send(newPatient);
+    } else {
+      res.sendStatus(404);
+    }
+  } catch (e) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    res.status(400).json({ error: e.message });
   }
 });
 

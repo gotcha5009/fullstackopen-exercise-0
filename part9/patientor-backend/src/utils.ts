@@ -3,8 +3,10 @@ import {
   NewPatientEntry,
   Gender,
   EntryWithoutId,
-  HealthCheckEntry,
   HealthCheckRating,
+  SickLeave,
+  Discharge,
+  DiagnoseEntry,
 } from './types';
 
 const isString = (text: unknown): text is string => {
@@ -76,13 +78,18 @@ const parseSpecialist = (specialist: unknown): string => {
 const isHealthCheckRating = (
   healthCheckRating: any
 ): healthCheckRating is HealthCheckRating => {
+  console.log('healthCheckRating :>> ', healthCheckRating);
+  console.log(
+    'Object.values(HealthCheckRating) :>> ',
+    Object.values(HealthCheckRating)
+  );
   return Object.values(HealthCheckRating).includes(healthCheckRating);
 };
 
 const parseHealthCheckRating = (
   healthCheckRating: unknown
 ): HealthCheckRating => {
-  if (!healthCheckRating || !isHealthCheckRating(healthCheckRating)) {
+  if (!isHealthCheckRating(healthCheckRating)) {
     throw new Error('Incorrect or missing healthCheckRating');
   }
   return healthCheckRating;
@@ -93,6 +100,28 @@ const parseEmployerName = (employerName: unknown): string => {
     throw new Error('Incorrect or missing employerName');
   }
   return employerName;
+};
+
+const isSickLeave = (sickLeave: any): sickLeave is SickLeave => {
+  return isDate(sickLeave.startDate) && isDate(sickLeave.endDate);
+};
+
+const parseSickLeave = (sickLeave: unknown): SickLeave => {
+  if (!sickLeave || !isSickLeave(sickLeave)) {
+    throw new Error('Incorrect sickLeave');
+  }
+  return sickLeave;
+};
+
+const isDischarge = (discharge: any): discharge is Discharge => {
+  return isDate(discharge.date) && isString(discharge.criteria);
+};
+
+const parseDischarge = (discharge: unknown): Discharge => {
+  if (!discharge || !isDischarge(discharge)) {
+    throw new Error('Incorrect or missing discharge');
+  }
+  return discharge;
 };
 
 type Fields = {
@@ -124,14 +153,44 @@ const toNewPatientEntry = ({
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const toNewEntry = (entry: any): EntryWithoutId => {
+  const diagnosisCodes = entry.diagnosisCodes as Array<DiagnoseEntry['code']>;
   switch (entry.type) {
     case 'HealthCheck':
-      const HealthEntry: HealthCheckEntry = {};
+      const healthEntry: EntryWithoutId = {
+        type: 'HealthCheck',
+        description: parseDescription(entry.description),
+        date: parseDate(entry.date),
+        specialist: parseSpecialist(entry.specialist),
+        ...(diagnosisCodes && { diagnosisCodes }),
+        healthCheckRating: parseHealthCheckRating(entry.healthCheckRating),
+      };
+      return healthEntry;
     case 'OccupationalHealthcare':
+      const occuapationalEntry: EntryWithoutId = {
+        type: 'OccupationalHealthcare',
+        description: parseDescription(entry.description),
+        date: parseDate(entry.date),
+        specialist: parseSpecialist(entry.specialist),
+        ...(diagnosisCodes && { diagnosisCodes }),
+        employerName: parseEmployerName(entry.employerName),
+        ...(Boolean(entry.sickLeave) && {
+          sickLeave: parseSickLeave(entry.sickLeave),
+        }),
+      };
+      return occuapationalEntry;
     case 'Hospital':
+      const hospitalEntry: EntryWithoutId = {
+        type: 'Hospital',
+        description: parseDescription(entry.description),
+        date: parseDate(entry.date),
+        specialist: parseSpecialist(entry.specialist),
+        ...(diagnosisCodes && { diagnosisCodes }),
+        discharge: parseDischarge(entry.discharge),
+      };
+      return hospitalEntry;
     default:
       throw new Error('Entry type not found');
   }
 };
 
-export default toNewPatientEntry;
+export { toNewPatientEntry, toNewEntry };
